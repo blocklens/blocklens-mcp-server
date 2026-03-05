@@ -58,7 +58,7 @@ export class BlocklensApi {
 
     const headers: Record<string, string> = {
       'Accept': 'application/json',
-      'User-Agent': 'blocklens-mcp-server/0.2.0',
+      'User-Agent': 'blocklens-mcp-server/0.3.0',
     };
 
     if (this.apiKey) {
@@ -130,6 +130,10 @@ export class BlocklensApi {
     throw lastError ?? new Error('Blocklens API request failed');
   }
 
+  async fetchEndpoint(path: string, params: QueryParams = {}): Promise<ApiResponse<unknown>> {
+    return this.fetch(path, params);
+  }
+
   async listMetrics(): Promise<ApiResponse<unknown[]>> {
     return this.fetch('/metrics', { active_only: true });
   }
@@ -178,7 +182,7 @@ export class BlocklensApi {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': accept,
-      'User-Agent': 'blocklens-mcp-server/0.2.0',
+      'User-Agent': 'blocklens-mcp-server/0.3.0',
     };
 
     if (this.apiKey) {

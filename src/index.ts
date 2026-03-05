@@ -24,7 +24,7 @@ const api = new BlocklensApi({
 
 const server = new McpServer({
   name: 'blocklens',
-  version: '0.2.0',
+  version: '0.3.0',
 });
 
 // --- Helpers ---
@@ -263,6 +263,64 @@ server.tool(
 );
 
 server.tool(
+  'get_coindays',
+  'Get Coin Days metrics: CDD, binary CDD, supply-adjusted CDD, liveliness, vaultedness, dormancy, dormancy flow, transferred price, and transfer volume. Coin Days measure the economic weight of Bitcoin transactions by accounting for both amount and holding time.',
+  {
+    days: z.number().int().min(1).max(10000).default(30).describe('Number of daily data points to return'),
+    start_date: z.string().optional().describe('Start date (YYYY-MM-DD). Overrides days param when set.'),
+    end_date: z.string().optional().describe('End date (YYYY-MM-DD). Defaults to today.'),
+  },
+  async ({ days, start_date, end_date }) => {
+    try {
+      const result = await api.fetchEndpoint('/coindays', { limit: days, start_date, end_date });
+      return jsonResult(result.data);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+server.tool(
+  'get_blockchain',
+  'Get blockchain network metrics: block height or daily blocks mined.',
+  {
+    metric: z.enum(['block_height', 'blocks_mined']).describe('Blockchain metric: "block_height" or "blocks_mined"'),
+    days: z.number().int().min(1).max(10000).default(30).describe('Number of daily data points to return'),
+    start_date: z.string().optional().describe('Start date (YYYY-MM-DD). Overrides days param when set.'),
+    end_date: z.string().optional().describe('End date (YYYY-MM-DD). Defaults to today.'),
+  },
+  async ({ metric, days, start_date, end_date }) => {
+    try {
+      const result = await api.fetchEndpoint(`/blockchain/${metric}`, { limit: days, start_date, end_date });
+      return jsonResult(result.data);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+server.tool(
+  'get_cycle_performance',
+  'Get Bitcoin cycle performance data. Shows price progression indexed from cycle reference points (lows, ATHs, halvings). Without type parameter returns aggregate cycle comparison; with type returns individual cycle tracks.',
+  {
+    type: z.enum(['low', 'ath', 'halving']).optional().describe('Cycle reference point type: "low", "ath", or "halving". Omit for aggregate comparison.'),
+    days: z.number().int().min(1).max(10000).default(1500).describe('Number of daily data points to return'),
+    start_date: z.string().optional().describe('Start date (YYYY-MM-DD). Overrides days param when set.'),
+    end_date: z.string().optional().describe('End date (YYYY-MM-DD). Defaults to today.'),
+  },
+  async ({ type, days, start_date, end_date }) => {
+    try {
+      const params: Record<string, string | number | undefined> = { limit: days, start_date, end_date };
+      if (type) params.type = type;
+      const result = await api.fetchEndpoint('/cycle-performance', params);
+      return jsonResult(result.data);
+    } catch (err) {
+      return errorResult(err);
+    }
+  }
+);
+
+server.tool(
   'render_chart',
   `Render a Bitcoin on-chain analytics chart as a PNG image. Supports single metrics, multiple metrics, templates, and full customization.
 
@@ -296,7 +354,7 @@ Examples:
       'Multiple metrics. Pass as string array ["price", "lth_supply"] for simple, or objects for customization.'
     ),
     template: z.string().optional().describe(
-      'Chart template ID. Templates: price, price_volume, market_cap, holder_supply, mvrv_ratio, realized_price, realized_cap, unrealized_pl, realized_pl, sopr, block_height'
+      'Chart template ID. Templates: price, price_volume, market_cap, holder_supply, mvrv_ratio, realized_price, realized_cap, unrealized_pl, realized_pl, sopr, block_height, realized_volatility, coindays_destroyed, dormancy_flow, liveliness'
     ),
 
     // --- Time range ---

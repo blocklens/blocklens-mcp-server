@@ -1,0 +1,43 @@
+{
+  "name": "blocklens-mcp-server",
+  "version": "0.2.0",
+  "description": "MCP server for Blocklens crypto on-chain analytics",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "bin": {
+    "blocklens-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "keywords": ["mcp", "bitcoin", "crypto", "on-chain", "analytics", "blocklens"],
+  "author": "Blocklens <hello@blocklens.co>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dzhurinskiy/blocklens-mcp-server",
+    "directory": "packages/mcp-server"
+  },
+  "homepage": "https://blocklens.co",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.25.0 || ^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "tsx": "^4.7.0",
+    "@types/node": "^20.0.0"
+  }
+}

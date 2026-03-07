@@ -7,13 +7,13 @@
     "source": "github",
     "id": "1173686170"
   },
-  "version": "0.4.0",
+  "version": "0.4.1",
   "websiteUrl": "https://blocklens.co",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "blocklens-mcp-server",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "transport": {
         "type": "stdio"
       },

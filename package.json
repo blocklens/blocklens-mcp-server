@@ -1,6 +1,6 @@
 {
   "name": "blocklens-mcp-server",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "MCP server for Blocklens crypto on-chain analytics",
   "type": "module",
   "main": "dist/index.js",

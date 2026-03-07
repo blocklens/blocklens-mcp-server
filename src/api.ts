@@ -58,7 +58,7 @@ export class BlocklensApi {
 
     const headers: Record<string, string> = {
       'Accept': 'application/json',
-      'User-Agent': 'blocklens-mcp-server/0.4.1',
+      'User-Agent': 'blocklens-mcp-server/0.4.2',
     };
 
     if (this.apiKey) {
@@ -182,7 +182,7 @@ export class BlocklensApi {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Accept': accept,
-      'User-Agent': 'blocklens-mcp-server/0.4.1',
+      'User-Agent': 'blocklens-mcp-server/0.4.2',
     };
 
     if (this.apiKey) {

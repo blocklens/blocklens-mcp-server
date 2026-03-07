@@ -24,7 +24,7 @@ const api = new BlocklensApi({
 
 const server = new McpServer({
   name: 'blocklens',
-  version: '0.3.0',
+  version: '0.4.0',
 });
 
 // --- Helpers ---
@@ -322,21 +322,28 @@ server.tool(
 
 server.tool(
   'render_chart',
-  `Render a Bitcoin on-chain analytics chart as a PNG image. Supports single metrics, multiple metrics, templates, and full customization.
+  `Render a Bitcoin on-chain analytics chart as a PNG image. Supports single metrics, multiple metrics, templates, computed formulas, and full customization.
 
 Use this when the user asks to "show", "chart", "plot", "graph", or "visualize" any metric.
 
 Smart defaults: just provide metric IDs and you get a beautiful chart. Customize with optional params.
 
-Supports reference lines (horizontal lines at specific Y values) and reference areas (shaded zones between two Y values) for highlighting thresholds, ranges, or formula-derived levels.
+Supports custom Y-axes with vertical zones (stack volume below price), domain clamping, reference lines, reference areas, and computed formula series.
+
+IMPORTANT — Multi-axis guidance for different units:
+When combining metrics with different units (e.g., BTC supply + USD price, or a dimensionless ratio + USD), ALWAYS place them on separate Y-axes. Otherwise one metric will appear as a flat line near zero due to scale mismatch. Use list_metrics to check the "unit" field and assign metrics with different units to different axes (left vs right).
 
 Examples:
 - Simple: render_chart({ metric: "price" })
 - Multi-metric: render_chart({ metrics: ["lth_supply", "sth_supply"], days: 730, style: "area" })
 - Template: render_chart({ template: "mvrv_ratio" })
 - Custom: render_chart({ metrics: [{ id: "price", axis: "right" }, { id: "lth_mvrv", axis: "left" }], days: 365, title: "Price vs MVRV" })
+- Multi-unit (separate axes): render_chart({ metrics: [{ id: "lth_supply", axis: "left" }, { id: "price", axis: "right" }], days: 365 })
+- Vertical zones: render_chart({ metrics: [{ id: "price", y_axis_id: "ax-p" }, { id: "volume", y_axis_id: "ax-v", style: "bar" }], y_axes: [{ id: "ax-p", side: "right", range: [20, 100] }, { id: "ax-v", side: "left", range: [0, 20] }] })
 - Reference line: render_chart({ metric: "lth_mvrv", reference_lines: [{ y: 3.5, label: "Overheated", stroke: "#ef4444", dash: "3 3" }] })
-- Reference area: render_chart({ metric: "lth_mvrv", reference_areas: [{ y1: 0, y2: 0.85, label: "Undervalued", fill: "#22c55e", fill_opacity: 0.15 }] })`,
+- Reference area: render_chart({ metric: "lth_mvrv", reference_areas: [{ y1: 0, y2: 0.85, label: "Undervalued", fill: "#22c55e", fill_opacity: 0.15 }] })
+- Formula (ratio): render_chart({ metrics: [{ id: "lth_supply" }, { id: "sth_supply" }], formulas: [{ expression: "m1 / m2", label: "LTH/STH Ratio", color: "#f59e0b" }], days: 365 })
+- Formula on separate axis: render_chart({ metrics: [{ id: "lth_supply", axis: "left" }, { id: "sth_supply", axis: "left" }], formulas: [{ expression: "m1 / m2", label: "LTH/STH Ratio", y_axis_id: "ax-r" }], y_axes: [{ id: "ax-r", side: "right" }], days: 365 })`,
   {
     // --- Data source (exactly one required) ---
     metric: z.string().optional().describe(
@@ -372,6 +379,20 @@ Examples:
     scale: z.enum(['linear', 'log']).default('linear').describe('Y-axis scale'),
     format: z.enum(['png', 'json']).default('png').describe('Output format: png (image) or json (metadata)'),
 
+    // --- Custom Y-axes ---
+    y_axes: z.array(z.object({
+      id: z.string().optional().describe('Unique axis identifier, referenced by y_axis_id on metrics/formulas'),
+      side: z.enum(['left', 'right']).describe('Which side of the chart the axis appears on'),
+      scale: z.enum(['linear', 'log']).optional().describe('Axis scale (default: linear)'),
+      format: z.enum(['number', 'currency', 'percent']).optional().describe('Number format for axis labels'),
+      range: z.tuple([z.number(), z.number()]).optional().describe('Vertical zone [from%, to%]. 0=bottom, 100=top. E.g. [0, 20] for bottom 20%'),
+      domain_min: z.number().optional().describe('Hard minimum domain clamp'),
+      domain_max: z.number().optional().describe('Hard maximum domain clamp'),
+      no_padding: z.enum(['top', 'bottom', 'both']).optional().describe('Remove automatic 10% padding from edges'),
+    })).optional().describe(
+      'Custom Y-axes with vertical zones. Use range to stack axes (e.g. volume [0,20], price [20,100]). Use domain_min/domain_max to clamp axis bounds.'
+    ),
+
     // --- Reference annotations ---
     reference_lines: z.array(z.object({
       y: z.number().optional().describe('Static Y value'),
@@ -392,6 +413,17 @@ Examples:
       fill_opacity: z.number().optional().describe('Fill opacity 0-1'),
       label: z.string().optional().describe('Label text'),
     })).optional().describe('Shaded reference zones between two Y values. Example: highlight when MVRV < 0.85'),
+
+    // --- Computed formula series ---
+    formulas: z.array(z.object({
+      expression: z.string().describe('Math expression referencing metrics by position: m1, m2, etc. E.g. "m1 / m2", "m1 - m2", "m1 * 100"'),
+      label: z.string().describe('Display name for the computed series'),
+      color: z.string().optional().describe('Hex color, e.g. "#f59e0b"'),
+      style: z.enum(['line', 'area', 'bar']).optional().describe('Chart style for this formula series'),
+      y_axis_id: z.string().optional().describe('Y-axis ID to bind this series to'),
+    })).optional().describe(
+      'Computed series derived from metric data. Formulas reference metrics by position (m1, m2, ...) and support arithmetic (+, -, *, /). Use together with metrics to add derived indicators.'
+    ),
   },
   async (params) => {
     try {
@@ -424,6 +456,20 @@ Examples:
       if (params.width !== 1200) body.width = params.width;
       if (params.height !== 600) body.height = params.height;
 
+      // Custom Y-axes
+      if (params.y_axes) {
+        body.y_axes = params.y_axes.map(ax => ({
+          ...(ax.id && { id: ax.id }),
+          side: ax.side,
+          ...(ax.scale && { scale: ax.scale }),
+          ...(ax.format && { format: ax.format }),
+          ...(ax.range && { range: ax.range }),
+          ...(ax.domain_min !== undefined && { domain_min: ax.domain_min }),
+          ...(ax.domain_max !== undefined && { domain_max: ax.domain_max }),
+          ...(ax.no_padding && { no_padding: ax.no_padding }),
+        }));
+      }
+
       // Reference annotations
       if (params.reference_lines) {
         body.reference_lines = params.reference_lines.map(rl => ({
@@ -446,6 +492,11 @@ Examples:
           ...(ra.fill_opacity !== undefined && { fill_opacity: ra.fill_opacity }),
           ...(ra.label && { label: ra.label }),
         }));
+      }
+
+      // Computed formula series
+      if (params.formulas) {
+        body.formulas = params.formulas;
       }
 
       // JSON metadata format

@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.blocklens/blocklens-mcp-server",
-  "description": "Bitcoin on-chain analytics: 85+ metrics including MVRV, SOPR, realized price, holder data",
+  "description": "Bitcoin on-chain analytics MCP server — 109 metrics including MVRV, SOPR, NUPL, realized price, HODL Waves, coin days destroyed, cycle performance. Connect AI agents to raw blockchain data.",
   "repository": {
     "url": "https://github.com/blocklens/blocklens-mcp-server",
     "source": "github",
@@ -13,7 +13,7 @@
     {
       "registryType": "npm",
       "identifier": "blocklens-mcp-server",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "transport": {
         "type": "stdio"
       },

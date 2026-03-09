@@ -1,10 +1,32 @@
 # blocklens-mcp-server
 
-MCP (Model Context Protocol) server for [Blocklens](https://blocklens.co) Bitcoin on-chain analytics. Connect your AI agent to **109 on-chain metrics** computed from raw blockchain data — no API wrappers, no delays.
+MCP (Model Context Protocol) server for [Blocklens](https://blocklens.co) Bitcoin on-chain analytics. Connect your AI agent to **127 on-chain metrics** computed from raw blockchain data — no API wrappers, no delays.
 
 ## Quick Start
 
-### Claude Desktop
+### Remote Access (No Install)
+
+Connect directly to the hosted endpoint — no packages, no local setup:
+
+**Claude.ai (Browser):** Settings → Connectors → Add → URL: `https://mcp.blocklens.co`
+
+**Claude Desktop / Cursor / Windsurf (via mcp-remote):**
+```json
+{
+  "mcpServers": {
+    "blocklens": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://mcp.blocklens.co"]
+    }
+  }
+}
+```
+
+**Any MCP HTTP client:** POST to `https://mcp.blocklens.co` ([Streamable HTTP](https://modelcontextprotocol.io/specification/2025-03-26/basic/transports#streamable-http) transport)
+
+### Local Install
+
+#### Claude Desktop
 
 Add to your `claude_desktop_config.json`:
 
@@ -26,7 +48,7 @@ Add to your `claude_desktop_config.json`:
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
-### Cursor / Windsurf
+#### Cursor / Windsurf
 
 Add to your MCP config (`.cursor/mcp.json`):
 
@@ -42,7 +64,7 @@ Add to your MCP config (`.cursor/mcp.json`):
 }
 ```
 
-### Demo Mode (No API Key)
+#### Demo Mode (No API Key)
 
 Works without an API key — you get 60 days of history for basic-tier metrics. Get an API key at [blocklens.co/api-keys](https://blocklens.co/api-keys) for full access.
 
@@ -50,7 +72,7 @@ Works without an API key — you get 60 days of history for basic-tier metrics. 
 
 | Tool | Description |
 |------|-------------|
-| `list_metrics` | List all 109 available metrics with categories and tiers |
+| `list_metrics` | List all 127 available metrics with categories and tiers |
 | `search_metrics` | Search metrics by keyword |
 | `get_metric` | Get full definition of a single metric |
 | `get_categories` | List metric categories with counts |
@@ -66,7 +88,7 @@ Works without an API key — you get 60 days of history for basic-tier metrics. 
 | `get_latest_metrics` | Latest snapshot across all categories |
 | `render_chart` | Render any metric as PNG with annotations and templates |
 
-## Metrics Coverage (109 total)
+## Metrics Coverage (127 total)
 
 ### Market Data (27 metrics)
 Price, OHLC, volume, market cap, drawdown from ATH, **6 realized volatility windows** (1W, 2W, 1M, 3M, 6M, 1Y), cycle performance, and individual cycle tracks from lows, ATHs, and halvings.
@@ -82,6 +104,9 @@ NUPL, unrealized/realized P/L, SOPR — each with aggregate, LTH, and STH breakd
 
 ### Coin Days (11 metrics)
 Coin Days Destroyed (CDD), binary CDD, supply-adjusted CDD, liveliness, vaultedness, dormancy, dormancy flow, net coin days, coin days accumulated, transferred price, transfer volume.
+
+### ETF Analytics (11 metrics)
+Total BTC holdings, AUM, net/cumulative flows, cumulative money flow, ETF realized price, US Spot ETF realized price, US Spot cumulative money flow, BTC dominance, US BTC holdings, ETF premium average.
 
 ### Blockchain (2 metrics)
 Block height, blocks mined.
@@ -132,6 +157,7 @@ render_chart({
 
 ## Links
 
+- [Remote MCP Endpoint](https://mcp.blocklens.co)
 - [Blocklens](https://blocklens.co)
 - [Full Documentation](https://docs.blocklens.co/api/mcp-server)
 - [Metrics Reference](https://docs.blocklens.co/metrics)
